@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Demo 1</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <script src="/libs/babylon.js"></script>
+  <style>
+    html,
+    body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+
+</head>
+
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+</body>
+
+</html>
+
+<script>
+  
+  window.addEventListener('DOMContentLoaded', function () {
+    // 我们的渲染代码  
+    var canvas = document.getElementById('renderCanvas');
+    var engine = new BABYLON.Engine(canvas, true);
+
+   
+    /*
+    var createScene = function() {
+        // 创建一个基本的Scene对象，用来容纳所有其他对象  
+        var scene = new BABYLON.Scene(engine);
+
+        // 创建一个相机，设置其位置为(x:0, y:5, z:-10)  
+        var camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5, -10), scene);
+
+        // 相机聚焦在场景原点位置  
+        camera.setTarget(BABYLON.Vector3.Zero());
+
+        // 使得我们可以控制相机拍摄角度，和three.js中的OrbitsControl效果类似，但简单得多  
+        camera.attachControl(canvas, false);
+
+        // 创建一个半球形光源,朝向为天空  
+        var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
+
+        // 创建一个内置的“球”体；其构造函数的参数：名称、宽度、深度、精度，场景，其中精度表示表面细分数。  
+        var sphere = BABYLON.Mesh.CreateSphere('sphere1', 16, 2, scene);
+
+        // 设置球体位置，使其位于平面之上  
+        sphere.position.y = 1;
+
+        // 创建一个内置的“地面”形状；其构造函数的5个参数和球体一样  
+        var ground = BABYLON.Mesh.CreateGround('ground1', 6, 6, 2, scene);
+
+        return scene;
+    }*/
+
+    /// demo1部分
+
+    var createScene = function () {
+      var scene = new BABYLON.Scene(engine);
+
+      // Setup environment
+      var camera = new BABYLON.ArcRotateCamera("ArcRotateCamera", 1, 1.3, 20, new BABYLON.Vector3(0, 0, 0), scene);
+      camera.attachControl(canvas, true);
+      camera.wheelPrecision = 100;
+
+      var fountain = BABYLON.Mesh.CreateBox("foutain", .01, scene);
+      fountain.visibility = 0;
+
+      // Ground
+      var ground = BABYLON.Mesh.CreatePlane("ground", 50.0, scene);
+      ground.position = new BABYLON.Vector3(0, 0, 0);
+      ground.rotation = new BABYLON.Vector3(Math.PI / 2, 0, 0);
+
+      ground.material = new BABYLON.StandardMaterial("groundMat", scene);
+      ground.material.backFaceCulling = false;
+      ground.material.diffuseColor = new BABYLON.Color3(0.3, 0.3, 1);
+
+      scene.debugLayer.show();
+      
+
+      // Create a particle system
+      var particleSystem;
+      var useGPUVersion = false;
+
+      var fogTexture = new BABYLON.Texture("smoke_15.png", scene);
+
+      var createNewSystem = function () {
+        if (particleSystem) {
+          particleSystem.dispose();
+        }
+
+        if (useGPUVersion && BABYLON.GPUParticleSystem.IsSupported) {
+          particleSystem = new BABYLON.GPUParticleSystem("particles", { capacity: 50000 }, scene);
+          particleSystem.activeParticleCount = 15000;
+          particleSystem.manualEmitCount = particleSystem.activeParticleCount;
+          particleSystem.minEmitBox = new BABYLON.Vector3(-50, 2, -50); // Starting all from
+          particleSystem.maxEmitBox = new BABYLON.Vector3(50, 2, 50); // To..
+
+        } else {
+          particleSystem = new BABYLON.ParticleSystem("particles", 2500, scene);
+          particleSystem.manualEmitCount = particleSystem.getCapacity();
+          particleSystem.minEmitBox = new BABYLON.Vector3(-25, 2, -25); // Starting all from
+          particleSystem.maxEmitBox = new BABYLON.Vector3(25, 2, 25); // To...
+        }
+
+
+        particleSystem.particleTexture = fogTexture.clone();
+        particleSystem.emitter = fountain;
+        particleSystem.isLocal = true;
+
+
+        let nodeMaterial = new BABYLON.NodeMaterial("#345ATT#4", scene);
+
+        nodeMaterial.loadAsync("nodeMaterial.json").then(() => {
+          nodeMaterial.build(false);
+          nodeMaterial.getBlockByName("emitXMin").value = particleSystem.minEmitBox.x;
+          nodeMaterial.getBlockByName("emitXMax").value = particleSystem.maxEmitBox.x;
+          nodeMaterial.getBlockByName("emitYMin").value = particleSystem.minEmitBox.z;
+          nodeMaterial.getBlockByName("emitYMax").value = particleSystem.maxEmitBox.z;
+
+          // 用深拷贝，不用matrix.invert()，因为会改变原矩阵
+          nodeMaterial.getBlockByName("emitWorldMatrix").value = BABYLON.Matrix.Invert(fountain.getWorldMatrix());
+
+          nodeMaterial.createEffectForParticles(particleSystem);
+
+        });
+
+        // emitter矩阵更新事件
+        fountain.onAfterWorldMatrixUpdateObservable.add(e => {
+          nodeMaterial.getBlockByName("emitWorldMatrix").value = BABYLON.Matrix.Invert(fountain.getWorldMatrix());
+        });
+
+
+        particleSystem.color1 = new BABYLON.Color4(0.8, 0.8, 0.8, 0.1);
+        particleSystem.color2 = new BABYLON.Color4(.95, .95, .95, 0.15);
+        particleSystem.colorDead = new BABYLON.Color4(0.9, 0.9, 0.9, 0.1);
+        particleSystem.minSize = 3.5;
+        particleSystem.maxSize = 5.0;
+        particleSystem.minLifeTime = Number.MAX_SAFE_INTEGER;
+        particleSystem.emitRate = 50000;
+        particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        particleSystem.gravity = new BABYLON.Vector3(0, 0, 0);
+        particleSystem.direction1 = new BABYLON.Vector3(0, 0, 0);
+        particleSystem.direction2 = new BABYLON.Vector3(0, 0, 0);
+        particleSystem.minAngularSpeed = -2;
+        particleSystem.maxAngularSpeed = 2;
+        particleSystem.minEmitPower = .5;
+        particleSystem.maxEmitPower = 1;
+        particleSystem.updateSpeed = 0.005;
+
+        particleSystem.start();
+
+
+        // console.log(particleSystem._particles);
+      }
+
+      createNewSystem();
+
+
+
+      return scene;
+    }
+
+
+    var scene = createScene();
+    engine.runRenderLoop(function () {
+      scene.render();
+    });
+
+  });
+</script>
