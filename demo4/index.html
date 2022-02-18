@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Demo 1</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <script src="./libs/babylon.js"></script>
+  <style>
+    html,
+    body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+
+</head>
+
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+</body>
+
+</html>
+
+<script>
+
+  window.addEventListener('DOMContentLoaded', function () {
+    // 我们的渲染代码  
+    var canvas = document.getElementById('renderCanvas');
+    var engine = new BABYLON.Engine(canvas, true);
+
+
+    var createScene = function () {
+
+      var scene = new BABYLON.Scene(engine);
+      // scene.debugLayer.show() // for debug purpose
+
+      // Camera
+      var camera = new BABYLON.ArcRotateCamera("ArcRotateCamera", 0.6011, 3, 5, new BABYLON.Vector3(0, 0, 0), scene);
+      camera.attachControl(canvas, true);
+
+      // Scene color
+      scene.clearColor = new BABYLON.Color4(0, 0, 0);//0.6, 0.7, 0.6, 1
+      var pipeline = new BABYLON.DefaultRenderingPipeline("default", true, scene);        //post pocessing
+
+      // Tone mapping
+      scene.imageProcessingConfiguration.toneMappingEnabled = true;       //enable tone mapping
+      scene.imageProcessingConfiguration.toneMappingType = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;     //Gets the type of tone mapping effect.  
+      //ACES Tone mapping (used by default in unreal and unity). This can help getting closer to other engines rendering to increase portability.
+      scene.imageProcessingConfiguration.exposure = 1;
+
+      // Bloom
+      pipeline.bloomEnabled = true;       //Enable the bloom from the pipeline
+      pipeline.bloomThreshold = 0.5;      //The strength of the bloom.
+      pipeline.bloomWeight = 0.3;     //The strength of the bloom.
+      pipeline.bloomKernel = 64;      //Specifies the size of the bloom blur kernel, relative to the final output size
+      pipeline.bloomScale = 0.5;      //The scale of the bloom, lower value will provide better performance.
+
+      particleSize = 0.3;
+
+      var myposition = new BABYLON.Vector3(0, 0, 0);
+      var noiseStrength = new BABYLON.Vector3(2, 0, 2);
+
+      var radius = 2;
+      var angle = Math.PI / 8;
+      var height = radius / Math.tan(angle / 2);
+      BABYLON.Texture.ForceSerializeBuffers = true;
+      BABYLON.Texture.SerializeBuffers = true;
+
+
+      // ==================================== Particle systems ====================================
+      // noise texture
+      var noiseTexture = new BABYLON.NoiseProceduralTexture("perlin", 256, scene);
+      noiseTexture.animationSpeedFactor = 5;
+      noiseTexture.persistence = 2;
+      noiseTexture.brightness = 0.5;
+      noiseTexture.octaves = 100;
+
+      /////////////////////////////////////////////////////////////////////
+      var System1FireSubEmitter = new BABYLON.SubEmitter(new BABYLON.ParticleHelper.CreateDefault(300));
+      System1FireSubEmitter.particleSystem.particleTexture = new BABYLON.Texture("./textures/Flare.png", scene);
+      System1FireSubEmitter.particleSystem.emitter = new BABYLON.AbstractMesh("", scene);
+      System1FireSubEmitter.particleSystem.startPositionFunction = new BABYLON.Vector3(20, 20, 20);
+      System1FireSubEmitter.particleSystem.minLifeTime = 0.5;
+      System1FireSubEmitter.particleSystem.maxLifeTime = 0.8;
+      System1FireSubEmitter.particleSystem.minEmitPower = 0.3;
+      System1FireSubEmitter.particleSystem.maxEmitPower = 0.3;
+      System1FireSubEmitter.particleSystem.emitRate = 200;
+      System1FireSubEmitter.particleSystem.minSize = 2 * particleSize;
+      System1FireSubEmitter.particleSystem.maxSize = 4 * particleSize;
+      System1FireSubEmitter.particleSystem.addSizeGradient(1, 0.4 * particleSize);
+      System1FireSubEmitter.particleSystem.targetStopDuration = 3;
+      System1FireSubEmitter.particleSystem.minInitialRotation = - (Math.PI / 2);
+      System1FireSubEmitter.particleSystem.maxInitialRotation = Math.PI / 2;
+
+      System1FireSubEmitter.particleSystem.addColorGradient(0, new BABYLON.Color4(0.33, 0.72, 4, 0.5), new BABYLON.Color4(0.63, 4, 1, 0.5));
+      System1FireSubEmitter.particleSystem.addColorGradient(0.04, new BABYLON.Color4(0.36, 0.88, 2, 0.72), new BABYLON.Color4(1.56, 1.86, 0.9, 0.52));
+      System1FireSubEmitter.particleSystem.addColorGradient(0.29, new BABYLON.Color4(0.69, 1, 0.51, 0.51), new BABYLON.Color4(0.18, 0.59, 0.16, 0.23));
+      System1FireSubEmitter.particleSystem.addColorGradient(0.53, new BABYLON.Color4(0, 0.5, 1, 0.23), new BABYLON.Color4(0.25, 0.77, 0.6, 0.14));
+      System1FireSubEmitter.particleSystem.addColorGradient(0.9, new BABYLON.Color4(0.14, 0.39, 0.33, 0.14), new BABYLON.Color4(0.53, 0.69, 0.68, 0));
+      System1FireSubEmitter.particleSystem.addColorGradient(1.0, new BABYLON.Color4(0.27, 0.05, 0.05, 0));
+      System1FireSubEmitter.type = BABYLON.SubEmitterType.ATTACHED;
+      System1FireSubEmitter.inheritDirection = true;
+      System1FireSubEmitter.particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+
+      /////////////////////////////////////////////////////////////////////
+      var System2FireSubEmitter = new BABYLON.SubEmitter(new BABYLON.ParticleHelper.CreateDefault(300));
+      System2FireSubEmitter.particleSystem.particleTexture = new BABYLON.Texture("./textures/Flare.png", scene);
+      System2FireSubEmitter.particleSystem.emitter = new BABYLON.AbstractMesh("", scene);
+      System2FireSubEmitter.particleSystem.startPositionFunction = new BABYLON.Vector3(20, 20, 20);
+      System2FireSubEmitter.particleSystem.minLifeTime = 0.4;
+      System2FireSubEmitter.particleSystem.maxLifeTime = 0.7;
+      System2FireSubEmitter.particleSystem.minEmitPower = 0.1;
+      System2FireSubEmitter.particleSystem.maxEmitPower = 0.1;
+      System2FireSubEmitter.particleSystem.emitRate = 200;
+      System2FireSubEmitter.particleSystem.minSize = 2 * particleSize;
+      System2FireSubEmitter.particleSystem.maxSize = 4 * particleSize;
+      System2FireSubEmitter.particleSystem.addSizeGradient(1, 0.4 * particleSize);
+      System2FireSubEmitter.particleSystem.targetStopDuration = 3;
+      System2FireSubEmitter.particleSystem.minInitialRotation = -(Math.PI / 2);
+      System2FireSubEmitter.particleSystem.maxInitialRotation = Math.PI / 2;
+
+      System2FireSubEmitter.particleSystem.addColorGradient(0, new BABYLON.Color4(4, 2.8, 0.36, 0.5), new BABYLON.Color4(4, 3.32, 2.52, 0.5));
+      System2FireSubEmitter.particleSystem.addColorGradient(0.075, new BABYLON.Color4(2, 1.24, 0, 0.72), new BABYLON.Color4(3, 2.79, 0, 0.52));
+      System2FireSubEmitter.particleSystem.addColorGradient(0.29, new BABYLON.Color4(1, 0.66, 0.02, 0.51), new BABYLON.Color4(0.59, 0.35, 0.16, 0.23));
+      System2FireSubEmitter.particleSystem.addColorGradient(0.53, new BABYLON.Color4(0.29, 0.36, 1, 0.23), new BABYLON.Color4(0.77, 0.5, 0.25, 0.14));
+      System2FireSubEmitter.particleSystem.addColorGradient(0.9, new BABYLON.Color4(0.39, 0.23, 0.14, 0.14), new BABYLON.Color4(0.59, 0.69, 0.53, 0));
+      System2FireSubEmitter.particleSystem.addColorGradient(1.0, new BABYLON.Color4(0.27, 0.05, 0.05, 0));
+      System2FireSubEmitter.type = BABYLON.SubEmitterType.ATTACHED;
+      System2FireSubEmitter.inheritDirection = true;
+      System2FireSubEmitter.particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+
+      //////////////////////////////////////////////////////////////////////        
+      function createBlastSmokeSubEmitter(position) {
+        var blastSmokeSubEmitter = new BABYLON.SubEmitter(new BABYLON.ParticleHelper.CreateDefault(position, 100));
+        blastSmokeSubEmitter.particleTexture = new BABYLON.Texture("./textures/cloud.png", scene);
+        blastSmokeSubEmitter.particleSystem.createSphereEmitter(0.3);
+        blastSmokeSubEmitter.particleSystem.minLifeTime = 2;
+        blastSmokeSubEmitter.particleSystem.maxLifeTime = 3;
+        blastSmokeSubEmitter.particleSystem.minEmitPower = 0.001;
+        blastSmokeSubEmitter.particleSystem.maxEmitPower = 0.002;
+        blastSmokeSubEmitter.particleSystem.manualEmitCount = 50;
+        blastSmokeSubEmitter.particleSystem.addSizeGradient(0, 0 * particleSize);
+        blastSmokeSubEmitter.particleSystem.addSizeGradient(0.1, 1.5 * particleSize);
+        blastSmokeSubEmitter.particleSystem.addSizeGradient(0.2, 1 * particleSize);
+        blastSmokeSubEmitter.particleSystem.addSizeGradient(1, 0.8 * particleSize);
+        blastSmokeSubEmitter.particleSystem.addSizeGradient(1, 0.1 * particleSize);
+        blastSmokeSubEmitter.particleSystem.targetStopDuration = 2;
+        blastSmokeSubEmitter.particleSystem.minInitialRotation = -(Math.PI / 2);
+        blastSmokeSubEmitter.particleSystem.maxInitialRotation = Math.PI / 2;
+        blastSmokeSubEmitter.particleSystem.addColorGradient(0, new BABYLON.Color4(8, 8, 1, 0.2), new BABYLON.Color4(7, 2, 9, 0.2));
+        blastSmokeSubEmitter.particleSystem.addColorGradient(0.2, new BABYLON.Color4(6, 6, 0.6, 0.1), new BABYLON.Color4(6, 1, 5.8, 0.1));
+        blastSmokeSubEmitter.particleSystem.addColorGradient(0.4, new BABYLON.Color4(0.07, 1, 1, 0), new BABYLON.Color4(0.99, 0.99, 0.5, 0));
+        blastSmokeSubEmitter.particleSystem.addColorGradient(1, new BABYLON.Color4(0.45, 0.19, 0.04, 0), new BABYLON.Color4(0.19, 0.12, 0.35, 0));
+        blastSmokeSubEmitter.particleSystem.updateSpeed = 0.025;
+        blastSmokeSubEmitter.type = BABYLON.SubEmitterType.END;
+        blastSmokeSubEmitter.particleSystem.blendMode = BABYLON.ParticleSystem.BILLBOARDMODE_Y;
+        return blastSmokeSubEmitter;
+      }
+
+      /////////////////////////////////////////////////////////////////////////
+      function createFireworkSubEmitter(position) {
+        var particleSystem1 = new BABYLON.ParticleSystem(name, 100, scene);
+        particleSystem1.particleTexture = new BABYLON.Texture("./textures/Flare.png", scene);
+        particleSystem1.createSphereEmitter(0.2);
+        particleSystem1.minSize = particleSize;
+        particleSystem1.maxSize = 1.5 * particleSize;
+        particleSystem1.minLifeTime = 0.4;
+        particleSystem1.maxLifeTime = 0.6;
+        particleSystem1.manualEmitCount = 50;
+        // particleSystem1.disposeOnStop = true;
+        particleSystem1.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+        particleSystem1.minAngularSpeed = 0;
+        particleSystem1.maxAngularSpeed = Math.PI;
+        particleSystem1.minEmitPower = 10;
+        particleSystem1.maxEmitPower = 15;
+        particleSystem1.updateSpeed = 0.005;
+        particleSystem1.gravity = new BABYLON.Vector3(0, -30, 0);
+        particleSystem1.subEmitters = [];
+
+        particleSystem1.subEmitters = [[System1FireSubEmitter], [createFireSubEmitter(0.5, 0.9, 4)], [createFireSubEmitter(0.5, 0.9, 4)], [System2FireSubEmitter]];
+
+        particleSystem1.addColorGradient(0.0, new BABYLON.Color4(8, 8, 1, 0.2), new BABYLON.Color4(7, 2, 9, 0.2));
+        particleSystem1.addColorGradient(0.04, new BABYLON.Color4(2, 2, 0.2, 0.1), new BABYLON.Color4(2, 0.3, 1.9, 0.1));
+        particleSystem1.addColorGradient(0.19, new BABYLON.Color4(1.6, 2, 2), new BABYLON.Color4(2, 1.58, 1.3));
+        particleSystem1.addColorGradient(0.53, new BABYLON.Color4(5.4, 3.2, 2.48), new BABYLON.Color4(3.28, 2.6, 4));
+        particleSystem1.addColorGradient(0.9, new BABYLON.Color4(3.5, 3, 2, 0.5));
+        particleSystem1.addColorGradient(1.0, new BABYLON.Color4(0.47, 0.42, 1, 0));
+
+        var se = new BABYLON.SubEmitter(particleSystem1)
+        se.type = BABYLON.SubEmitterType.END;
+        se.inheritDirection = false;
+        return se;
+      }
+
+      //////////////////////////////////////////////////////////////////////////
+      function createFireSubEmitter(position, minLifeTime, maxLifeTime, maxSizeTime) {
+        var fireSubEmitter = new BABYLON.SubEmitter(new BABYLON.ParticleHelper.CreateDefault(position, 500));
+        fireSubEmitter.particleSystem.particleTexture = new BABYLON.Texture("./textures/Flare.png", scene);
+        // fireSubEmitter.particleSystem.particleTexture.ForceSerializeBuffers = true;
+        // fireSubEmitter.particleSystem.particleTexture.SerializeBuffers = true;
+        fireSubEmitter.particleSystem.emitter = new BABYLON.AbstractMesh("", scene);
+        fireSubEmitter.particleSystem.minLifeTime = minLifeTime;
+        fireSubEmitter.particleSystem.maxLifeTime = maxLifeTime;
+        fireSubEmitter.particleSystem.minEmitPower = 0;
+        fireSubEmitter.particleSystem.maxEmitPower = 0;
+        fireSubEmitter.particleSystem.emitRate = 300;
+        fireSubEmitter.particleSystem.minSize = 2 * particleSize;
+        fireSubEmitter.particleSystem.maxSize = maxSizeTime * particleSize;
+        fireSubEmitter.particleSystem.addSizeGradient(1, 0.4 * particleSize);
+        fireSubEmitter.particleSystem.targetStopDuration = 3;
+        fireSubEmitter.particleSystem.minInitialRotation = -(Math.PI / 2);
+        fireSubEmitter.particleSystem.maxInitialRotation = Math.PI / 2;
+
+        fireSubEmitter.particleSystem.addColorGradient(0.0, new BABYLON.Color4(3, 2.3, 0.27, 0), new BABYLON.Color4(3, 0.42, 3));
+        fireSubEmitter.particleSystem.addColorGradient(0.04, new BABYLON.Color4(3, 0.7, 0.0, 0.72), new BABYLON.Color4(2, 0.9, 1, 0.52));
+        fireSubEmitter.particleSystem.addColorGradient(0.29, new BABYLON.Color4(0.99, 0.62, 0.15, 0.51), new BABYLON.Color4(0.58, 0.18, 0.77, 0.23));
+        fireSubEmitter.particleSystem.addColorGradient(0.53, new BABYLON.Color4(0.69, 0.13, 0.13, 0.23), new BABYLON.Color4(0.25, 0.77, 0.6, 0.14));
+        fireSubEmitter.particleSystem.addColorGradient(0.9, new BABYLON.Color4(0.31, 0.04, 0.04, 0.14), new BABYLON.Color4(0.56, 0.53, 0.69, 0.0));
+        fireSubEmitter.particleSystem.addColorGradient(1.0, new BABYLON.Color4(0.31, 0.04, 0.04, 0));
+
+
+        fireSubEmitter.type = BABYLON.SubEmitterType.ATTACHED;
+        fireSubEmitter.inheritDirection = true;
+        fireSubEmitter.particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+        return fireSubEmitter;
+      }
+
+      /////////////////////////////////////////////////////////////////////////
+      function createSmokeSubEmitter(position, minLifeTime, maxLifeTime, maxSizeTime) {
+        var smokeSubEmitter = new BABYLON.SubEmitter(new BABYLON.ParticleHelper.CreateDefault(position, 500));
+        smokeSubEmitter.particleSystem.isAnimationSheetEnabled = true;
+        smokeSubEmitter.particleSystem.particleTexture = new BABYLON.Texture("./textures/T_smokeOmni_36_1536.png", scene, true, false);
+        smokeSubEmitter.particleSystem.spriteCellHeight = 256;
+        smokeSubEmitter.particleSystem.spriteCellWidth = 256;
+        smokeSubEmitter.particleSystem.startSpriteCellID = 0;
+        smokeSubEmitter.particleSystem.endSpriteCellID = 36;
+        smokeSubEmitter.particleSystem.spriteCellChangeSpeed = 1;
+        smokeSubEmitter.particleSystem.emitter = new BABYLON.AbstractMesh("", scene);
+        smokeSubEmitter.particleSystem.minLifeTime = minLifeTime;
+        smokeSubEmitter.particleSystem.maxLifeTime = maxLifeTime;
+        smokeSubEmitter.particleSystem.minEmitPower = 1.2;
+        smokeSubEmitter.particleSystem.maxEmitPower = -1;
+
+        smokeSubEmitter.particleSystem.emitRate = 200;
+        smokeSubEmitter.particleSystem.addSizeGradient(0, 1 * particleSize);
+        smokeSubEmitter.particleSystem.addSizeGradient(0.5, 2 * particleSize);
+        smokeSubEmitter.particleSystem.addSizeGradient(1, maxSizeTime * particleSize);
+        smokeSubEmitter.particleSystem.targetStopDuration = 10;
+        smokeSubEmitter.particleSystem.minInitialRotation = - (Math.PI / 2);
+        smokeSubEmitter.particleSystem.maxInitialRotation = Math.PI / 2;
+        smokeSubEmitter.particleSystem.addColorGradient(0.0, new BABYLON.Color4(1, 0.53, 0.14, 0.01));
+        smokeSubEmitter.particleSystem.addColorGradient(0.08, new BABYLON.Color4(1, 0.53, 0.14, 0.02));
+        smokeSubEmitter.particleSystem.addColorGradient(0.29, new BABYLON.Color4(1, 0.87, 0.63, 0.05));
+        smokeSubEmitter.particleSystem.addColorGradient(0.73, new BABYLON.Color4(1.2, 1.2, 1.3, 0.05));
+        smokeSubEmitter.particleSystem.addColorGradient(1.00, new BABYLON.Color4(1.1, 1.1, 1.2, 0.1));
+        smokeSubEmitter.particleSystem.updateSpeed = 0.0005;
+        smokeSubEmitter.type = BABYLON.SubEmitterType.ATTACHED;
+        smokeSubEmitter.inheritDirection = true;
+        smokeSubEmitter.particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        return smokeSubEmitter;
+      }
+
+      //////////////////////////////////////////////////////////////////////////
+      function Firework(position, noiseStrength) {
+        var parentSystem = BABYLON.ParticleHelper.CreateDefault(position, 10, scene);
+        // parentSystem.particleTexture = new BABYLON.Texture("./textures/Flare.png", scene);
+        // parentSystem.particleTexture.ForceSerializeBuffers = true;
+        // parentSystem.particleTexture.SerializeBuffers = true;
+        parentSystem.minSize = particleSize;
+        parentSystem.maxSize = 2 * particleSize;
+        parentSystem.minLifeTime = 1.2;
+        parentSystem.maxLifeTime = 1.2;
+        parentSystem.minEmitPower = 11;
+        parentSystem.maxEmitPower = 11;
+        parentSystem.updateSpeed = 0.015;
+        parentSystem.addVelocityGradient(0, 4.8, 5);
+        parentSystem.addVelocityGradient(0.9, 3.2, 3.5);
+        parentSystem.addVelocityGradient(1.0, 0.1, 0.12);
+        parentSystem.emitRate = 8;
+        parentSystem.createConeEmitter(radius, angle);
+        parentSystem.noiseTexture = noiseTexture;
+        parentSystem.noiseStrength = noiseStrength;
+        parentSystem.addColorGradient(0.0, new BABYLON.Color4(5, 5, 0, 0.1), new BABYLON.Color4(5, 0, 5, 0.1));
+        parentSystem.addColorGradient(0.2, new BABYLON.Color4(6, 6, 0.6), new BABYLON.Color4(6, 1, 5.8));
+        parentSystem.addColorGradient(0.5, new BABYLON.Color4(0.05, 3.4, 3), new BABYLON.Color4(5, 2, 0.65));
+        parentSystem.addColorGradient(1.0, new BABYLON.Color4(0.63, 0.26, 0.04), new BABYLON.Color4(0.16, 0, 0.53));
+
+        parentSystem.gravity = new BABYLON.Vector3(0, -10, 0);
+
+        parentSystem.subEmitters = [[
+          createFireSubEmitter(position, 0.4, 0.8, 4),
+          createBlastSmokeSubEmitter(position),
+          createFireworkSubEmitter(position)]];
+
+        parentSystem.start();
+        parentSystem.targetStopDuration = 0.2;
+
+        var mySet = BABYLON.ParticleHelper.ExportSet([parentSystem]);
+        mySet.BaseAssetsUrl = '.';
+        var serializedJson = JSON.stringify(mySet.serialize(true), null, '\t');
+        // function download(content, fileName, contentType) {
+        //     var a = document.createElement("a");
+        //     var file = new Blob([content], {type: contentType});
+        //     a.href = URL.createObjectURL(file);
+        //     a.download = fileName;
+        //     a.click();
+        // }
+        // console.log(serializedJson);
+        // download(serializedJson, 'firework01.json', 'application/json');
+        // console.log(serializedJson)
+
+        return parentSystem;
+      }
+
+
+      // ========================== start ==========================
+      // Spawn particle system on key press
+      document.addEventListener('keydown', LaunchFirework);
+
+      // Remove listeners when scene disposed
+      scene.onDisposeObservable.add(function () {
+        document.removeEventListener('keydown', LaunchFirework);
+      });
+
+      // 定时发送
+      setInterval(() => {
+        Firework(myposition, noiseStrength);
+      } , 2000);
+
+      // scene.debugLayer.show();
+
+      // Launch barrel
+      function LaunchFirework() {
+        if (event.keyCode == 32) // space
+        {
+          Firework(myposition, noiseStrength);
+        }
+      }
+      // ============================================================
+
+      return scene;
+    };
+
+
+    var scene = createScene();
+    engine.runRenderLoop(function () {
+      scene.render();
+    });
+
+  });
+</script>
