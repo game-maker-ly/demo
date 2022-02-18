@@ -273,6 +273,7 @@
       //////////////////////////////////////////////////////////////////////////
       function Firework(position, noiseStrength) {
         var parentSystem = BABYLON.ParticleHelper.CreateDefault(position, 10, scene);
+        parentSystem.name = "_parentSystem";
         // parentSystem.particleTexture = new BABYLON.Texture("./textures/Flare.png", scene);
         // parentSystem.particleTexture.ForceSerializeBuffers = true;
         // parentSystem.particleTexture.SerializeBuffers = true;
@@ -332,10 +333,16 @@
         document.removeEventListener('keydown', LaunchFirework);
       });
 
-      // 定时发送
-      setInterval(() => {
-        Firework(myposition, noiseStrength);
-      } , 2000);
+
+      setTimeout(() => {
+        var parentSys = Firework(myposition, noiseStrength);
+        // 定时发送
+        setInterval(() => {
+          parentSys.start();
+        }, 3000);
+      }, 3000);
+
+
 
       // scene.debugLayer.show();
 
@@ -343,7 +350,7 @@
       function LaunchFirework() {
         if (event.keyCode == 32) // space
         {
-          Firework(myposition, noiseStrength);
+          // Firework(myposition, noiseStrength);
         }
       }
       // ============================================================
