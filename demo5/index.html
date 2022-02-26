@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Demo 2</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <script src="./libs/babylon.js"></script>
+  <script src="./libs/babylonjs.loaders.min.js"></script>
+  <style>
+    html,
+    body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+
+</head>
+
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+</body>
+
+</html>
+
+<script>
+
+  window.addEventListener('DOMContentLoaded', function () {
+    // 我们的渲染代码  
+    var canvas = document.getElementById('renderCanvas');
+    var engine = new BABYLON.Engine(canvas, true);
+
+
+    /// demo1部分
+
+    var createScene = function () {
+      var scene = new BABYLON.Scene(engine);
+      var camera = new BABYLON.ArcRotateCamera("cam", 1.65, 1.56, 20, BABYLON.Vector3.Zero());
+      scene.clearColor = new BABYLON.Color3(0, 0, 0);
+
+      scene.environmentTexture = new BABYLON.CubeTexture("textures/environment.env", scene);
+      scene.createDefaultSkybox(scene.environmentTexture, false, 1000, 0, false);
+
+      camera.wheelDeltaPercentage = 0.01;
+      camera.attachControl(canvas, true);
+      camera.upperBetaLimit = 1.75;
+
+      // // Material
+      // var groundMat = new BABYLON.PBRMaterial("groundMat", scene);
+      // groundMat.albedoColor = new BABYLON.Color4(63 / 255, 52 / 255, 97 / 255, 1);
+      // groundMat.metallic = 0;
+      // groundMat.roughness = 0.4;
+      // groundMat.environmentIntensity = 0;
+
+      // // Ground
+      // var ground = BABYLON.Mesh.CreatePlane("ground", 500.0, scene);
+      // ground.position = new BABYLON.Vector3(0, -10, 0);
+      // ground.rotation = new BABYLON.Vector3(Math.PI / 2, 0, 0);
+      // ground.material = groundMat;
+
+      // Lights
+      // 创建一个半球形光源,朝向为天空  
+      var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
+      light.intensity = 1;
+      // light.includedOnlyMeshes.push(ground);
+
+      scene.debugLayer.show();
+
+
+      // Environment
+      // var hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("https://playground.babylonjs.com/textures/Studio_Softbox_2Umbrellas_cube_specular.dds", scene);
+      // hdrTexture.name = "envTex";
+      // hdrTexture.gammaSpace = false;
+      // hdrTexture.setReflectionTextureMatrix(BABYLON.Matrix.RotationY(2.4));
+      // scene.environmentTexture = hdrTexture;
+
+      // var ccMask = new BABYLON.Texture("https://models.babylonjs.com/Demos/shaderBall/ShaderBallMat_clearCoat.png", scene, undefined, false);
+
+      BABYLON.SceneLoader.ShowLoadingScreen = false;
+
+      let nodeMaterial = new BABYLON.NodeMaterial("节点材质", scene);
+
+      Promise.all([
+        // BABYLON.SceneLoader.AppendAsync("model/shaderBall/BabylonShaderBall_Simple.gltf"),
+        BABYLON.SceneLoader.AppendAsync("model/CarbonFiberWheel.glb"),
+        nodeMaterial.loadAsync("nodeMaterial.json")
+      ]).then(function () {
+
+        nodeMaterial.build(false);
+        // nodeMaterial.getBlockByName("HdrIntensity").value = 1;
+        // nodeMaterial.getBlockByName("emitWorldMatrix").value = 1;
+
+        // console.log(nodeMaterial.getTextureBlocks());
+        // nodeMaterial.getTextureBlocks().forEach(e=> {
+        //   e.texture = null;
+        // });
+
+        // scene.getMeshByID(1).edgesRenderer = true;
+        scene.meshes.forEach(e => {
+          // var edges = new BABYLON.EdgesRenderer(e, 0.95, true);
+          if(e.id == "__root__"){
+            e.scaling = new BABYLON.Vector3(20,20,20);
+            e.getChildMeshes().forEach(f =>{
+              let mat = nodeMaterial.clone();
+              f.material = mat;
+            });
+            return false;
+          }
+          // if(!e.material) return true;
+          
+          // let mat = nodeMaterial.clone();
+          // mat.getBlockByName("Albedo texture").texture = e.material.albedoTexture;
+          // mat.getBlockByName("MetallicRoughness texture").texture = e.material.metallicTexture;
+          // mat.getBlockByName("Bump texture").texture = e.material.bumpTexture;
+          // // mat.getBlockByName("AO texture").texture = e.material.ambientTexture;
+
+          // // mat.getBlockByName("Sheen texture").texture = e.material.ambientTexture;
+          // // mat.getBlockByName("ClearCoat texture").texture = e.material.ambientTexture;
+          // mat.getBlockByName("ClearCoat tint texture").texture = e.material.metallicTexture;
+          // mat.getBlockByName("ClearCoat bump texture").texture = e.material.bumpTexture;
+
+          // console.log(e.material);
+          // e.material = mat;
+
+          // var wireMesh = new BABYLON.LinesMesh("Wire_" + e.name);
+          // wireMesh.color = new BABYLON.Color3.FromHexString("#66CCFF").scale(21);
+          // var vd = new BABYLON.VertexData();
+          // vd.positions = edges.linesPositions;
+          // vd.indices = edges.linesIndices;
+          // vd.normals = edges.linesNormals;
+          // vd.applyToMesh(wireMesh);
+
+          // wireMesh.parent = e.parent;
+          // e.isVisible = false;
+
+        });
+
+        // Enable clear coat on material
+        // var mainMat = scene.getMaterialByName("ShaderBallMat");
+        // mainMat.clearCoat.isEnabled = true;
+        // mainMat.clearCoat.texture = ccMask;
+
+        // Set up new rendering pipeline
+        var pipeline = new BABYLON.DefaultRenderingPipeline("default", true, scene);
+        // bloom
+        pipeline.bloomEnabled = true;
+
+        // Tone mapping
+        pipeline.toneMappingEnabled = true;
+        pipeline.toneMappingType = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+        pipeline.exposure = 1;
+
+        pipeline.fxaaEnabled = true;
+
+        // Glow Layer
+        // var gl = new BABYLON.GlowLayer("glow", scene, { 
+        //     mainTextureFixedSize: 1024,
+        //     blurKernelSize: 64
+        // });
+        // gl.intensity = 0.8;
+      });
+      
+
+      return scene;
+    };
+
+    
+
+
+
+    var scene = createScene();
+    engine.runRenderLoop(function () {
+      scene.render();
+    });
+
+  });
+</script>
