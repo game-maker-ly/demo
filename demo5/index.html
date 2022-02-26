@@ -73,7 +73,7 @@
       light.intensity = 1;
       // light.includedOnlyMeshes.push(ground);
 
-      scene.debugLayer.show();
+      // scene.debugLayer.show();
 
 
       // Environment
@@ -96,7 +96,7 @@
       ]).then(function () {
 
         nodeMaterial.build(false);
-        // nodeMaterial.getBlockByName("HdrIntensity").value = 1;
+        nodeMaterial.getBlockByName("HdrIntensity").value = 7;
         // nodeMaterial.getBlockByName("emitWorldMatrix").value = 1;
 
         // console.log(nodeMaterial.getTextureBlocks());
